@@ -7,6 +7,9 @@
 CROSS_COMPILE =
 
 CXX = $(CROSS_COMPILE)g++
+LDFLAGS += -Wl,--copy-dt-needed-entries
+LDFLAGS += -fuse-ld=mold
+EXTRA_FLAGS= -flto
 
 ##   DEBUG=1  : A Debug build includes the debugger symbols
 ##              and disables compiler optimization. Typically,
@@ -168,7 +171,7 @@ $(OBJ_GENERATED) : $(SRC_GENERATED) | $(OBJDIR)
 .DEFAULT_GOAL := all
 .PHONY: all docs test coverage lcov
 
-all: $(SRC_GENERATED) $(BIN_ALL) docs
+all: $(SRC_GENERATED) .WAIT $(BIN_ALL) docs
 
 test: $(SRC_GENERATED) $(BINDIR)/$(PISCSI_TEST)
 	$(BINDIR)/$(PISCSI_TEST)

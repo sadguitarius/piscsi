@@ -25,7 +25,7 @@ class PrimaryDevice;
 class ScsiController : public AbstractController
 {
 	// For timing adjustments
-	static const unsigned int MIN_EXEC_TIME = 50;
+	static const unsigned int MIN_EXEC_TIME = 400;
 
 	// Transfer period factor (limited to 50 x 4 = 200ns)
 	static const int MAX_SYNC_PERIOD = 50;
