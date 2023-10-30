@@ -171,7 +171,7 @@ $(OBJ_GENERATED) : $(SRC_GENERATED) | $(OBJDIR)
 .DEFAULT_GOAL := all
 .PHONY: all docs test coverage lcov
 
-all: $(SRC_GENERATED) .WAIT $(BIN_ALL) docs
+all: $(SRC_GENERATED) $(BIN_ALL) docs
 
 test: $(SRC_GENERATED) $(BINDIR)/$(PISCSI_TEST)
 	$(BINDIR)/$(PISCSI_TEST)
