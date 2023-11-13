@@ -76,7 +76,7 @@ SECRET_FILE="$HOME/.config/piscsi/secret"
 FILE_SHARE_PATH="$HOME/shared_files"
 FILE_SHARE_NAME="Pi File Server"
 
-APT_PACKAGES_COMMON="build-essential git protobuf-compiler bridge-utils"
+APT_PACKAGES_COMMON="build-essential git protobuf-compiler bridge-utils ca-certificates"
 APT_PACKAGES_BACKEND="libspdlog-dev libpcap-dev libprotobuf-dev protobuf-compiler libgmock-dev clang"
 APT_PACKAGES_PYTHON="python3 python3-dev python3-pip python3-venv python3-setuptools python3-wheel libev-dev libevdev2"
 APT_PACKAGES_WEB="nginx-light genisoimage man2html hfsutils dosfstools kpartx unzip unar disktype gettext"
@@ -111,7 +111,15 @@ function sudoCheck() {
 function deleteFile() {
     if sudo test -f "$1/$2"; then
         sudo rm "$1/$2" || exit 1
-        echo "Deleted $1/$2"
+        echo "Deleted file $1/$2"
+    fi
+}
+
+# Delete dir if it exists
+function deleteDir() {
+    if sudo test -d "$1"; then
+        sudo rm -rf "$1" || exit 1
+        echo "Deleted directory $1"
     fi
 }
 
@@ -228,6 +236,9 @@ function installPiscsiWebInterface() {
 
     deleteFile "$SSL_CERTS_PATH" "rascsi-web.crt"
     deleteFile "$SSL_KEYS_PATH" "rascsi-web.key"
+
+    # Deleting previous venv dir, if one exists, to avoid the common issue of broken python dependencies
+    deleteDir "$WEB_INSTALL_PATH/venv"
 
     if [ -f "$SSL_CERTS_PATH/piscsi-web.crt" ]; then
         echo "SSL certificate $SSL_CERTS_PATH/piscsi-web.crt already exists."
@@ -937,6 +948,7 @@ function installSamba() {
 # Installs and configures Webmin
 function installWebmin() {
     WEBMIN_PATH="/usr/share/webmin"
+    WEBMIN_MODULE_CONFIG="/etc/webmin/netatalk2/config"
     WEBMIN_MODULE_VERSION="1.0"
 
     if [ -d "$WEBMIN_PATH" ]; then
@@ -953,17 +965,27 @@ function installWebmin() {
 
     echo
     echo "Installing packages..."
-    sudo apt-get install curl --no-install-recommends --assume-yes </dev/null
+    sudo apt-get install curl libcgi-session-perl --no-install-recommends --assume-yes </dev/null
     curl -o setup-repos.sh https://raw.githubusercontent.com/webmin/webmin/master/setup-repos.sh
     sudo sh setup-repos.sh
     rm setup-repos.sh
-    sudo apt-get install webmin --install-recommends
+    sudo apt-get install webmin --install-recommends </dev/null
     echo
     echo "Downloading and installing Webmin module..."
-    rm netatalk2-wbm.tgz || true
+    if [[ -f "$WEBMIN_MODULE_CONFIG" ]]; then
+        echo "$WEBMIN_MODULE_CONFIG already exists; will not modify..."
+	WEBMIN_MODULE_FLAG=1
+    fi
+
+    rm netatalk2-wbm.tgz 2> /dev/null || true
     wget -O netatalk2-wbm.tgz "https://github.com/Netatalk/netatalk-webmin/releases/download/netatalk2-$WEBMIN_MODULE_VERSION/netatalk2-wbm-$WEBMIN_MODULE_VERSION.tgz" </dev/null
-    sudo /usr/share/webmin/install-module.pl netatalk2-wbm.tgz
-    rm netatalk2-wbm.tgz
+    sudo "$WEBMIN_PATH/install-module.pl" netatalk2-wbm.tgz
+
+    if [[ ! $WEBMIN_MODULE_FLAG ]]; then
+        echo "Modifying $WEBMIN_MODULE_CONFIG..."
+        sudo sed -i 's@/usr/sbin@/usr/local/sbin@' "$WEBMIN_MODULE_CONFIG"
+    fi
+    rm netatalk2-wbm.tgz || true
 }
 
 # updates configuration files and installs packages needed for the OLED screen script
@@ -1024,6 +1046,9 @@ function installPiscsiScreen() {
         echo "A reboot will be required for the change to take effect."
         REBOOT=1
     fi
+
+    # Deleting previous venv dir, if one exists, to avoid the common issue of broken python dependencies
+    deleteDir "$OLED_INSTALL_PATH/venv"
 
     echo "Installing the piscsi-oled.service configuration..."
     sudo cp -f "$OLED_INSTALL_PATH/service-infra/piscsi-oled.service" "$SYSTEMD_PATH/piscsi-oled.service"
@@ -1129,6 +1154,9 @@ function installPiscsiCtrlBoard() {
     fi
     set -e
 
+    # Deleting previous venv dir, if one exists, to avoid the common issue of broken python dependencies
+    deleteDir "$CTRLBOARD_INSTALL_PATH/venv"
+
     echo "Installing the piscsi-ctrlboard.service configuration..."
     sudo cp -f "$CTRLBOARD_INSTALL_PATH/service-infra/piscsi-ctrlboard.service" "$SYSTEMD_PATH/piscsi-ctrlboard.service"
     sudo sed -i /^ExecStart=/d "$SYSTEMD_PATH/piscsi-ctrlboard.service"
@@ -1223,7 +1251,7 @@ function runChoice() {
               compilePiscsi
               backupPiscsiService
               installPiscsi
-	      configurePiscsiService
+              configurePiscsiService
               enablePiscsiService
               preparePythonCommon
               if [[ $(isPiscsiScreenInstalled) -eq 0 ]]; then
@@ -1266,7 +1294,7 @@ function runChoice() {
               backupPiscsiService
               preparePythonCommon
               installPiscsi
-	      configurePiscsiService
+              configurePiscsiService
               enablePiscsiService
               if [[ $(isPiscsiScreenInstalled) -eq 0 ]]; then
                   echo "Detected piscsi oled service; will run the installation steps for the OLED monitor."
@@ -1454,7 +1482,7 @@ function runChoice() {
               fetchHardDiskDrivers
               compilePiscsi
               installPiscsi
-	      configurePiscsiService
+              configurePiscsiService
               enablePiscsiService
               preparePythonCommon
               cachePipPackages

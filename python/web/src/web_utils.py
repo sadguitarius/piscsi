@@ -4,12 +4,11 @@ Module for PiSCSI Web Interface utility methods
 
 import logging
 from grp import getgrall
-from os import path
 from pathlib import Path
 from ua_parser import user_agent_parser
 from re import findall
 
-from flask import request, make_response, abort
+from flask import request, abort
 from flask_babel import _
 from werkzeug.utils import secure_filename
 
@@ -299,66 +298,29 @@ def is_bridge_configured(interface):
         return_msg = _(
             "Configure the network bridge for %(interface)s first: ", interface=interface
         )
-        return {"status": False, "msg": return_msg + ", ".join(to_configure)}
 
-    return {"status": True, "msg": return_msg}
+    return {"status": True, "msg": return_msg + ", ".join(to_configure)}
 
 
-def is_safe_path(file_name):
+def is_safe_path(path_name):
     """
-    Takes (Path) file_name with the path to a file on the file system
-    Returns True if the path is safe
-    Returns False if the path is either absolute, or tries to traverse the file system
+    Takes (Path) path_name with the relative path to a file on the file system.
+    Returns False if the path is either absolute, or tries to traverse the file system.
+    Returns True if neither of the above criteria are met.
     """
     error_message = ""
-    if file_name.is_absolute():
+    if path_name.is_absolute():
         error_message = _("Path must not be absolute")
-    elif "../" in str(file_name):
+    elif "../" in str(path_name):
         error_message = _("Path must not traverse the file system")
-    elif str(file_name)[0] == "~":
+    elif str(path_name)[0] == "~":
         error_message = _("Path must not start in the home directory")
 
     if error_message:
-        logging.error("Not an allowed path: %s", str(file_name))
+        logging.error("Not an allowed path: %s", str(path_name))
         return {"status": False, "msg": error_message}
 
     return {"status": True, "msg": ""}
-
-
-def upload_with_dropzonejs(image_dir):
-    """
-    Takes (str) image_dir which is the path to the image dir to store files.
-    Opens a stream to transfer a file via the embedded dropzonejs library.
-    """
-    log = logging.getLogger("pydrop")
-    file_object = request.files["file"]
-    file_name = secure_filename(file_object.filename)
-
-    save_path = path.join(image_dir, file_name)
-    current_chunk = int(request.form["dzchunkindex"])
-
-    # Makes sure not to overwrite an existing file,
-    # but continues writing to a file transfer in progress
-    if path.exists(save_path) and current_chunk == 0:
-        return make_response(_("The file already exists!"), 400)
-
-    try:
-        with open(save_path, "ab") as save:
-            save.seek(int(request.form["dzchunkbyteoffset"]))
-            save.write(file_object.stream.read())
-    except OSError:
-        log.exception("Could not write to file")
-        return make_response(_("Unable to write the file to disk!"), 500)
-
-    total_chunks = int(request.form["dztotalchunkcount"])
-
-    if current_chunk + 1 == total_chunks:
-        # Validate the resulting file size after writing the last chunk
-        if path.getsize(save_path) != int(request.form["dztotalfilesize"]):
-            log.error("File size mismatch between the original file and transferred file.")
-            return make_response(_("Transferred file corrupted!"), 500)
-
-    return make_response(_("File upload successful!"), 200)
 
 
 def browser_supports_modern_themes():
