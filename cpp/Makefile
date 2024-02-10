@@ -8,8 +8,8 @@ CROSS_COMPILE =
 
 CXX = $(CROSS_COMPILE)g++
 LDFLAGS += -Wl,--copy-dt-needed-entries
-LDFLAGS += -fuse-ld=mold
-EXTRA_FLAGS= -flto
+# LDFLAGS += -fuse-ld=mold
+# EXTRA_FLAGS= -flto
 
 ##   DEBUG=1  : A Debug build includes the debugger symbols
 ##              and disables compiler optimization. Typically,
