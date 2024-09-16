@@ -1,9 +1,12 @@
 venv
+cpp/*.d
+cpp/.cache
 *.pyc
 *.swp
 *.log
 *~
 core
+.gitattributes
 .idea/
 .vscode
 .DS_Store
@@ -37,3 +40,6 @@ settings.json
 # submodules
 hfdisk*
 mac-hard-disk-drivers
+# pixi environments
+.pixi
+*.egg-info

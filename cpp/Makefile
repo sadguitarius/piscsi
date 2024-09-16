@@ -7,6 +7,7 @@
 CROSS_COMPILE =
 
 CXX = $(CROSS_COMPILE)g++
+LDFLAGS += -Wl,--copy-dt-needed-entries
 
 ##   DEBUG=1  : A Debug build includes the debugger symbols
 ##              and disables compiler optimization. Typically,
