@@ -40,6 +40,6 @@ settings.json
 # submodules
 hfdisk*
 mac-hard-disk-drivers
-# pixi environments
-.pixi
-*.egg-info
+
+# uv
+uv.lock

@@ -6,7 +6,7 @@
 ##                   arm-linux-gnueabihf-
 CROSS_COMPILE =
 
-CXX = $(CROSS_COMPILE)g++
+# CXX = $(CROSS_COMPILE)g++
 LDFLAGS += -Wl,--copy-dt-needed-entries
 
 ##   DEBUG=1  : A Debug build includes the debugger symbols
@@ -237,7 +237,7 @@ $(SCSILOOP) : $(BINDIR)/$(SCSILOOP)
 ##              compiler files and executable files 
 .PHONY: clean
 clean:
-	rm -rf $(OBJDIR) $(BINDIR) $(GENERATED_DIR) $(COVERAGE_DIR) $(COVERAGE_FILE)
+	rm -rf $(OBJDIR) $(BINDIR) $(GENERATED_DIR) $(COVERAGE_DIR) $(COVERAGE_FILE) *.d
 
 ##   install  : Copies all of the man pages to the correct location
 ##              Copies the binaries to a global install location
